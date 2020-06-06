@@ -4,8 +4,20 @@
 
 --同じVCIが複数存在しても良いようにユニークナンバーを用意してみる？
 
---アセットの取得
+--本体の取得
 local gunsword = vci.assets.GetSubItem("gunsword")
+
+--銃口位置の取得
+local shotPoint = vci.assets.GetTransform("shotpoint")
+
+--弾丸6つの取得
+local bullet = {}
+local MAX_BULLET = 6
+for bulletID=1,MAX_BULLET do
+    bullet[bulletID] = vci.assets.GetSubItem("bullet_"..bulletID)
+end
+local nowBulletID = 1 --現在発射準備中の弾丸ID
+
 
 --装備中かのステータス切り替え用変数
 local attachedStatus = nil
@@ -29,8 +41,24 @@ end
 ---[SubItemの所有権&Use状態]アイテムをグラッブしてグリップボタンを押すと呼ばれる。
 ---@param use string @押されたアイテムのSubItem名
 function onUse(use)
-    --バーンと音を鳴らす
-    vci.assets._ALL_PlayAudioFromName("bang")
+    if(use == "gunsword") then
+        print("弾を撃ちます。")
+        --バーンと音を鳴らす
+        vci.assets._ALL_PlayAudioFromName("bang")
+        --発射位置と方向を取得
+        local shotRotation = shotPoint.GetRotation()
+        local shotPosition = shotPoint.GetPosition()
+        local shotForward = shotPoint.GetForward()
+        --弾丸に位置と発射速度を与える
+        bullet[nowBulletID].SetRotation(shotRotation)
+        bullet[nowBulletID].SetPosition(shotPosition)
+        bullet[nowBulletID].SetVelocity(shotForward * 80)
+        --次弾に切り替え
+        nowBulletID = nowBulletID + 1
+        if(nowBulletID > MAX_BULLET) then
+            nowBulletID = 1
+        end
+    end
 end
 
 ---[not SubItemの所有権&Use状態]アイテムをグラッブしてグリップボタンを押してはなしたときに呼ばれる。
